@@ -1,0 +1,15 @@
+{
+  "required": true,
+  "package": "valoeghese.uniqueorigins.mixin",
+  "compatibilityLevel": "JAVA_8",
+  "mixins": [
+    "Uniquifier"
+  ],
+  "client": [
+  ],
+  "server": [
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

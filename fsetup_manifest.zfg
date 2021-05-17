@@ -1,0 +1,15 @@
+#Will be used in the future for updating workspaces to new versions.
+
+minecraft = 1.16.4;
+
+yarn = 7;
+
+group = valoeghese;
+
+modid = uniqueorigins;
+
+libs = [
+  Fabric API;
+]
+
+

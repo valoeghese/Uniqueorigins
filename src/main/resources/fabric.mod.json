@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "id": "uniqueorigins",
+  "version": "1.0.0",
+  
+  "name": "Uniqueorigins",
+  "description": "Mod Description.",
+  "authors": [
+    "Me!"
+  ],
+  
+  "icon": "assets/uniqueorigins/icon.png",
+  "license": "No Licence.",
+  
+  "environment": "*",
+  
+  "entrypoints": {
+    "main": [
+      "valoeghese.uniqueorigins.Uniqueorigins"
+    ]
+  },
+  
+  "requires": {
+    "fabricloader": ">=0.4.0"
+  },
+  
+  "mixins": [
+    "uniqueorigins.mixins.json"
+  ]
+}
