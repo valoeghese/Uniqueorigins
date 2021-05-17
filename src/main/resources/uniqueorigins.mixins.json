@@ -3,7 +3,7 @@
   "package": "valoeghese.uniqueorigins.mixin",
   "compatibilityLevel": "JAVA_8",
   "mixins": [
-    "Uniquifier"
+    "MixinOriginLayer"
   ],
   "client": [
   ],

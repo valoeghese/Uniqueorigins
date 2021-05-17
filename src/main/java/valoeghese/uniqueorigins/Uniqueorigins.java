@@ -1,6 +1,6 @@
 /*
  * Uniqueorigins
- * Copyright (C) 2020 Valoeghese
+ * Copyright (C) 2021 Valoeghese
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -23,12 +23,26 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import net.fabricmc.api.ModInitializer;
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.util.Identifier;
+import net.minecraft.world.World;
 
 public class Uniqueorigins implements ModInitializer {
 	public static final Logger LOGGER = LogManager.getLogger("Uniqueorigins");
+	private static final String ID = "uniqueorigindata";
 
 	@Override
 	public void onInitialize() {
 		LOGGER.info("Making sure your origins will be more... unique~");
+	}
+
+	public static UniquifierProperties getOriginData(PlayerEntity entity) {
+		return entity.getEntityWorld().getServer().getWorld(World.OVERWORLD).getPersistentStateManager().getOrCreate(UniqueState::new, ID);
+	}
+
+	public interface UniquifierProperties {
+		int getMaxOriginCount();
+		int getOriginCount(Identifier identifier);
+		void addOriginCount(PlayerEntity player, Identifier origin);
 	}
 }
