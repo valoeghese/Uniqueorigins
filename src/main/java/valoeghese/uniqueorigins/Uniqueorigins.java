@@ -24,6 +24,7 @@ import org.apache.logging.log4j.Logger;
 
 import net.fabricmc.api.ModInitializer;
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.Identifier;
 import net.minecraft.world.World;
 
@@ -37,7 +38,11 @@ public class Uniqueorigins implements ModInitializer {
 	}
 
 	public static UniquifierProperties getOriginData(PlayerEntity entity) {
-		return entity.getEntityWorld().getServer().getWorld(World.OVERWORLD).getPersistentStateManager().getOrCreate(UniqueState::new, ID);
+		return getOriginData(entity.getEntityWorld().getServer());
+	}
+
+	public static UniquifierProperties getOriginData(MinecraftServer server) {
+		return server.getWorld(World.OVERWORLD).getPersistentStateManager().getOrCreate(UniqueState::new, ID);
 	}
 
 	public interface UniquifierProperties {

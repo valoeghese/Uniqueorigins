@@ -19,16 +19,22 @@
 
 package valoeghese.uniqueorigins.mixin;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Overwrite;
+import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import io.github.apace100.origins.origin.OriginLayer;
+import io.github.apace100.origins.origin.OriginLayer.ConditionedOrigin;
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.network.PacketByteBuf;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.Identifier;
 import valoeghese.uniqueorigins.Uniqueorigins;
 import valoeghese.uniqueorigins.Uniqueorigins.UniquifierProperties;
@@ -50,4 +56,63 @@ public class MixinOriginLayer {
 				.filter(id -> properties.getOriginCount(id) < properties.getMaxOriginCount())
 				.collect(Collectors.toList()));
 	}
+
+	@Shadow
+	private Identifier identifier;
+	@Shadow
+	private List<ConditionedOrigin> conditionedOrigins;
+	@Shadow
+	private int order;
+	@Shadow
+	private boolean enabled;
+	@Shadow
+	private List<Identifier> originsExcludedFromRandom;
+	@Shadow
+	private boolean doesRandomAllowUnchoosable;
+	@Shadow
+	private boolean autoChooseIfNoChoice;
+
+	@Overwrite
+	public void write(PacketByteBuf buffer) {
+		buffer.writeString(identifier.toString());
+		buffer.writeInt(order);
+		buffer.writeBoolean(enabled);
+
+		OriginLayer ol = (OriginLayer) (Object) this;
+
+		MinecraftServer server = (MinecraftServer) net.fabricmc.loader.api.FabricLoader.getInstance().getGameInstance();
+		UniquifierProperties properties = Uniqueorigins.getOriginData(server);
+		int max = properties.getMaxOriginCount();
+
+		List<ConditionedOrigin> toWrite = new ArrayList<>();
+		
+		// Iterate for each conditioned origin and filter out :b:ad ones
+		for (ConditionedOrigin origin : conditionedOrigins) {
+			toWrite.add(
+					new ConditionedOrigin(origin.getCon, origins)
+					);
+		}
+
+		buffer.writeInt(conditionedOrigins.size());
+		conditionedOrigins.forEach(co -> co.write(buffer));
+
+		buffer.writeString(ol.getOrCreateTranslationKey());
+		buffer.writeString(ol.getMissingOriginNameTranslationKey());
+		buffer.writeString(ol.getMissingOriginDescriptionTranslationKey());
+		buffer.writeBoolean(ol.isRandomAllowed());
+
+		if(ol.isRandomAllowed()) {
+			buffer.writeBoolean(doesRandomAllowUnchoosable);
+			buffer.writeInt(originsExcludedFromRandom.size());
+			originsExcludedFromRandom.forEach(buffer::writeIdentifier);
+		}
+
+		buffer.writeBoolean(ol.hasDefaultOrigin());
+
+		if(ol.hasDefaultOrigin()) {
+			buffer.writeIdentifier(ol.getDefaultOrigin());
+		}
+		buffer.writeBoolean(autoChooseIfNoChoice);
+	}
+
 }

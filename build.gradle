@@ -32,10 +32,10 @@ repositories {
 	maven {
 		url "https://maven.shedaniel.me/"
 	}
-	/*maven {
+	maven {
 		name = "AdrianTodt's Maven"
 		url = "https://dl.bintray.com/adriantodt/maven"
-	}*/
+	}
 	flatDir {
 		dirs "./libs"
 	}
@@ -48,20 +48,15 @@ dependencies {
 	minecraft "com.mojang:minecraft:${project.minecraft_version}"
 	mappings "net.fabricmc:yarn:${project.minecraft_version}+build.${project.yarn_build}:v2"
 	modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
-	
-	modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
-	//modImplementation "com.github.apace100:origins-fabric:0.7.0"
-	/*implementation files('libs/cardinal-components-base-2.8.1.jar')
-	implementation files('libs/cardinal-components-entity-2.8.1.jar')
-	implementation files('libs/cloth-config-fabric-4.11.14.jar')
-	implementation files('libs/fallflyinglib-1.1.0.jar')
-	implementation files('libs/Origins-1.16.5-0.7.1.jar')*/
 
-	modCompileOnly name:'cardinal-components-base-2.8.1'
+	modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
+	modImplementation "com.github.apace100:origins-fabric:0.7.0"
+
+	/*modCompileOnly name:'cardinal-components-base-2.8.1'
 	modCompileOnly name:'cardinal-components-entity-2.8.1'
 	modCompileOnly name:'cloth-config-fabric-4.11.14'
 	modCompileOnly name:'fallflyinglib-1.1.0'
-	modCompileOnly name:'Origins-1.16.5-0.7.1'
+	modCompileOnly name:'Origins-1.16.5-0.7.1'*/
 
 	compileOnly "com.google.code.findbugs:jsr305:3.0.2"
 }
