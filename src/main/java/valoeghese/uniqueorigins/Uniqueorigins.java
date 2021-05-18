@@ -22,19 +22,28 @@ package valoeghese.uniqueorigins;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import net.fabricmc.api.EnvType;
 import net.fabricmc.api.ModInitializer;
+import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.Identifier;
 import net.minecraft.world.World;
+import valoeghese.uniqueorigins.proxy.ClientProxy;
+import valoeghese.uniqueorigins.proxy.CommonProxy;
+import valoeghese.uniqueorigins.proxy.ServerProxy;
 
 public class Uniqueorigins implements ModInitializer {
 	public static final Logger LOGGER = LogManager.getLogger("Uniqueorigins");
 	private static final String ID = "uniqueorigindata";
+	public static CommonProxy sidedProxy; // Yes this is outdated practise but trust me bro
 
 	@Override
+	@SuppressWarnings("deprecation")
 	public void onInitialize() {
 		LOGGER.info("Making sure your origins will be more... unique~");
+		FabricLoader loader = FabricLoader.getInstance();
+		sidedProxy = loader.getEnvironmentType() == EnvType.CLIENT ? new ClientProxy(loader.getGameInstance()) : new ServerProxy(loader.getGameInstance());
 	}
 
 	public static UniquifierProperties getOriginData(PlayerEntity entity) {
@@ -46,8 +55,25 @@ public class Uniqueorigins implements ModInitializer {
 	}
 
 	public interface UniquifierProperties {
+		/**
+		 * @return the highest count of any origin.
+		 */
 		int getMaxOriginCount();
+		/**
+		 * Retrieves the count of a given origin.
+		 * @param identifier the given origin
+		 * @return the number of players with that origin
+		 */
 		int getOriginCount(Identifier identifier);
-		void addOriginCount(PlayerEntity player, Identifier origin);
+		/**
+		 * Increments the count for the specified origin
+		 * @param origin the origin to increment the count for
+		 */
+		void addOriginCount(Identifier origin);
+		/**
+		 * Decrement the count for the specified origin
+		 * @param origin the origin to decrement the count for
+		 */
+		void removeOriginCount(Identifier origin);
 	}
 }

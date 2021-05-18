@@ -19,7 +19,6 @@
 
 package valoeghese.uniqueorigins;
 
-import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.util.Identifier;
 import net.minecraft.world.PersistentState;
@@ -44,8 +43,10 @@ public class UniqueState extends PersistentState implements UniquifierProperties
 
 	@Override
 	public int getOriginCount(Identifier identifier) {
-		String str = identifier.toString();
+		return getOriginCount(identifier.toString());
+	}
 
+	private int getOriginCount(String str) {
 		if (this.impl.contains(str, INT)) {
 			return this.impl.getInt(str);
 		} else {
@@ -54,13 +55,36 @@ public class UniqueState extends PersistentState implements UniquifierProperties
 	}
 
 	@Override
-	public void addOriginCount(PlayerEntity player, Identifier origin) {
+	public void addOriginCount(Identifier origin) {
 		String str = origin.toString();
 		int count = getOriginCount(origin) + 1;
 		this.impl.putInt(str, count);
 
 		if (count > getMaxOriginCount()) {
 			this.impl.putInt("maxCount", count);
+		}
+	}
+
+	@Override
+	public void removeOriginCount(Identifier origin) {
+		String str = origin.toString(); // get the string representation for the c.t. nbt
+		int count = getOriginCount(origin); // get the old count
+		boolean recomputeMax = count == getMaxOriginCount(); // if it was the max, we need to recompute the maximum
+		this.impl.putInt(str, count - 1); // set the new count
+
+		if (recomputeMax) {
+			boolean decrMax = true;
+
+			for (String k : this.impl.getKeys()) {
+				if (getOriginCount(k) == count) { // if the old count still exists
+					decrMax = false;
+					break;
+				}
+			}
+
+			if (decrMax) { // if the old count doesn't exist, count - 1 is guaranteed to exist. Put it there.
+				this.impl.putInt("maxCount", count - 1);
+			}
 		}
 	}
 

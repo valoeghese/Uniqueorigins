@@ -3,7 +3,9 @@
   "package": "valoeghese.uniqueorigins.mixin",
   "compatibilityLevel": "JAVA_8",
   "mixins": [
-    "MixinOriginLayer"
+    "AccessorConditionedOrigin",
+    "MixinOriginLayer",
+    "MixinPlayerOriginComponent"
   ],
   "client": [
   ],

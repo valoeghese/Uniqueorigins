@@ -20,7 +20,9 @@
 package valoeghese.uniqueorigins.mixin;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
+import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
 import org.spongepowered.asm.mixin.Mixin;
@@ -41,21 +43,36 @@ import valoeghese.uniqueorigins.Uniqueorigins.UniquifierProperties;
 
 @Mixin(value = OriginLayer.class, remap = false)
 public class MixinOriginLayer {
-	@Inject(at= @At("RETURN"), method = "getRandomOrigin", cancellable = true)
-	private void makeOriginsUniqueRandom(PlayerEntity entity, CallbackInfoReturnable<List<Identifier>> info) {
-		UniquifierProperties properties = Uniqueorigins.getOriginData(entity);
-		info.setReturnValue(info.getReturnValue().stream()
+	private <E extends Collection<Identifier>> E filter(E identifiers, UniquifierProperties properties, Collector<Identifier, ?, E> collector) {
+		E other = identifiers.stream()
 				.filter(id -> properties.getOriginCount(id) < properties.getMaxOriginCount())
-				.collect(Collectors.toList()));
+				.collect(collector);
+
+		if (other.isEmpty()) {
+			return identifiers;
+		} else {
+			return other;
+		}
+	}
+	@Inject(at= @At("RETURN"), method = "getRandomOrigins", cancellable = true)
+	private void makeOriginsUniqueRandom(PlayerEntity entity, CallbackInfoReturnable<List<Identifier>> info) {
+		if (!entity.getEntityWorld().isClient()) {
+			UniquifierProperties properties = Uniqueorigins.getOriginData(entity);
+			info.setReturnValue(
+					filter(info.getReturnValue(), properties, Collectors.toList())
+					);
+		}
 	}
 
-	@Inject(at= @At("RETURN"), method = "getOrigins", cancellable = true)
+	/*@Inject(at= @At("RETURN"), method = "getOrigins", cancellable = true)
 	private void makeOriginsUniqueNormal(PlayerEntity entity, CallbackInfoReturnable<List<Identifier>> info) {
-		UniquifierProperties properties = Uniqueorigins.getOriginData(entity);
-		info.setReturnValue(info.getReturnValue().stream()
-				.filter(id -> properties.getOriginCount(id) < properties.getMaxOriginCount())
-				.collect(Collectors.toList()));
-	}
+		if (!entity.getEntityWorld().isClient()) {
+			UniquifierProperties properties = Uniqueorigins.getOriginData(entity);
+			info.setReturnValue(
+					filter(info.getReturnValue(), properties, Collectors.toList())
+					);
+		}
+	}*/
 
 	@Shadow
 	private Identifier identifier;
@@ -74,27 +91,31 @@ public class MixinOriginLayer {
 
 	@Overwrite
 	public void write(PacketByteBuf buffer) {
+		// Old code
 		buffer.writeString(identifier.toString());
 		buffer.writeInt(order);
 		buffer.writeBoolean(enabled);
 
 		OriginLayer ol = (OriginLayer) (Object) this;
 
-		MinecraftServer server = (MinecraftServer) net.fabricmc.loader.api.FabricLoader.getInstance().getGameInstance();
-		UniquifierProperties properties = Uniqueorigins.getOriginData(server);
-		int max = properties.getMaxOriginCount();
+		// Replaced Code Starts Here ===================================
+		MinecraftServer server = Uniqueorigins.sidedProxy.getCurrentServer(); // get the server
+		UniquifierProperties properties = Uniqueorigins.getOriginData(server); // get the properties from the server
 
 		List<ConditionedOrigin> toWrite = new ArrayList<>();
-		
+
 		// Iterate for each conditioned origin and filter out :b:ad ones
 		for (ConditionedOrigin origin : conditionedOrigins) {
 			toWrite.add(
-					new ConditionedOrigin(origin.getCon, origins)
+					new ConditionedOrigin( // filter out the options
+							((AccessorConditionedOrigin) origin).getCondition(),
+							filter(origin.getOrigins(), properties, Collectors.toList()))
 					);
 		}
 
-		buffer.writeInt(conditionedOrigins.size());
-		conditionedOrigins.forEach(co -> co.write(buffer));
+		buffer.writeInt(toWrite.size()); // write the new data
+		toWrite.forEach(co -> co.write(buffer));
+		// Replaced Code Ends Here ==========================================
 
 		buffer.writeString(ol.getOrCreateTranslationKey());
 		buffer.writeString(ol.getMissingOriginNameTranslationKey());

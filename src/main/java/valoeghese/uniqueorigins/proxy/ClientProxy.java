@@ -17,17 +17,20 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-package valoeghese.uniqueorigins.mixin;
+package valoeghese.uniqueorigins.proxy;
 
-import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.gen.Accessor;
+import net.minecraft.client.MinecraftClient;
+import net.minecraft.server.MinecraftServer;
 
-import io.github.apace100.origins.origin.OriginLayer.ConditionedOrigin;
-import io.github.apace100.origins.power.factory.condition.ConditionFactory;
-import net.minecraft.entity.LivingEntity;
+public class ClientProxy implements CommonProxy {
+	public ClientProxy(Object game) throws ClassCastException {
+		this.client = (MinecraftClient) game;
+	}
+	
+	private final MinecraftClient client;
 
-@Mixin(value = ConditionedOrigin.class, remap = false)
-public interface AccessorConditionedOrigin {
-	@Accessor("condition")
-	ConditionFactory<LivingEntity>.Instance getCondition();
+	@Override
+	public MinecraftServer getCurrentServer() {
+		return this.client.getServer();
+	}
 }
