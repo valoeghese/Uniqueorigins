@@ -19,22 +19,18 @@ minecraft {
 }
 
 repositories {
-	maven { url "https://server.bbkr.space/artifactory/libs-release" } // Cotton maven - home of Cotton projects
-	maven { url "https://maven.abusedmaster.xyz" } // NerdHub maven
 	maven {
-		name = "Onyx Studios"
-		url = "https://maven.onyxstudios.dev"
+		url 'https://jitpack.io'
 	}
-	maven { url 'https://jitpack.io' }
+	maven {
+		name = "AdrianTodt's Maven"
+		url = "https://dl.bintray.com/adriantodt/maven"
+	}
 	maven {
 		url "https://maven.jamieswhiteshirt.com/libs-release/"
 	}
 	maven {
 		url "https://maven.shedaniel.me/"
-	}
-	maven {
-		name = "AdrianTodt's Maven"
-		url = "https://dl.bintray.com/adriantodt/maven"
 	}
 	flatDir {
 		dirs "./libs"
