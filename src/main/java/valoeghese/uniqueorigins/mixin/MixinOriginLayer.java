@@ -45,7 +45,7 @@ import valoeghese.uniqueorigins.Uniqueorigins.UniquifierProperties;
 
 @Mixin(value = OriginLayer.class, remap = false)
 public class MixinOriginLayer {
-	private <E extends Collection<Identifier>> E filter(@Nullable PlayerEntity player, E identifiers, UniquifierProperties properties, Collector<Identifier, ?, E> collector) {
+	private <E extends Collection<Identifier>> E filter(PlayerEntity player, E identifiers, UniquifierProperties properties, Collector<Identifier, ?, E> collector) {
 		E result = identifiers.stream()
 				.filter(id -> {
 					int originCount = properties.getOriginCount(id);
@@ -81,7 +81,7 @@ public class MixinOriginLayer {
 	@Shadow
 	private boolean autoChooseIfNoChoice;
 
-	@Overwrite
+	@Overwrite // Gonna move this mixin to run a bit later to fix some reconnection networking issues
 	public void write(PacketByteBuf buffer) {
 		// Old code
 		buffer.writeString(identifier.toString());
@@ -101,7 +101,7 @@ public class MixinOriginLayer {
 			toWrite.add(
 					new ConditionedOrigin( // filter out the options
 							((AccessorConditionedOrigin) origin).getCondition(),
-							filter(origin.getOrigins(), properties, Collectors.toList()))
+							filter(null, origin.getOrigins(), properties, Collectors.toList()))
 					);
 		}
 
