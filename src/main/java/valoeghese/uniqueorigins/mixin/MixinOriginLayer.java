@@ -44,17 +44,14 @@ import valoeghese.uniqueorigins.Uniqueorigins.UniquifierProperties;
 @Mixin(value = OriginLayer.class, remap = false)
 public class MixinOriginLayer {
 	private <E extends Collection<Identifier>> E filter(E identifiers, UniquifierProperties properties, Collector<Identifier, ?, E> collector) {
-		E other = identifiers.stream()
-				.filter(id -> properties.getOriginCount(id) < properties.getMaxOriginCount())
+		E result = identifiers.stream()
+				.filter(id -> {
+					int origin = properties.getOriginCount(id);
+					return origin < properties.getMaxOriginCount() || origin == properties.getMinOriginCount(); // if max and min are the same, special case. I tried simpler implementations of this but it deletes every origin which is cringe
+				})
 				.collect(collector);
-
-		if (other.isEmpty() && identifiers.size() > 1) {
-			System.out.println(this.identifier + "\tUnfiltered");
-			return identifiers;
-		} else {
-			System.out.println(this.identifier + "\tFiltered: " + other.toString());
-			return other;
-		}
+		System.out.println(this.identifier + "\tModified: " + result.toString());
+		return result;
 	}
 	@Inject(at= @At("RETURN"), method = "getRandomOrigins", cancellable = true)
 	private void makeOriginsUniqueRandom(PlayerEntity entity, CallbackInfoReturnable<List<Identifier>> info) {
