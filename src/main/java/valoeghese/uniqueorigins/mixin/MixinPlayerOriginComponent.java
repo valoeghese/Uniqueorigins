@@ -51,9 +51,11 @@ public abstract class MixinPlayerOriginComponent {
 				UniquifierProperties properties = Uniqueorigins.getOriginData(this.player);
 
 				if (oldOrigin != null) {
+					System.out.println("Removing from the unique origin count: " + oldOrigin.getIdentifier());
 					properties.removeOriginCount(oldOrigin.getIdentifier());
 				}
 
+				System.out.println("Adding to the unique origin count: " + origin.getIdentifier());
 				properties.addOriginCount(origin.getIdentifier());
 			}
 		}

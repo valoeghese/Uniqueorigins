@@ -46,14 +46,10 @@ dependencies {
 	modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
 
 	modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
-	modImplementation "com.github.apace100:origins-fabric:0.7.0"
-
-	/*modCompileOnly name:'cardinal-components-base-2.8.1'
-	modCompileOnly name:'cardinal-components-entity-2.8.1'
-	modCompileOnly name:'cloth-config-fabric-4.11.14'
-	modCompileOnly name:'fallflyinglib-1.1.0'
-	modCompileOnly name:'Origins-1.16.5-0.7.1'*/
-
+	modImplementation ("com.github.apace100:origins-fabric:0cc0b2f") {
+		exclude group: 'com.terraformersmc', module: 'modmenu'
+	}
+	
 	compileOnly "com.google.code.findbugs:jsr305:3.0.2"
 }
 

@@ -48,9 +48,11 @@ public class MixinOriginLayer {
 				.filter(id -> properties.getOriginCount(id) < properties.getMaxOriginCount())
 				.collect(collector);
 
-		if (other.isEmpty()) {
+		if (other.isEmpty() && !(identifiers.size() == 1)) {
+			System.out.println("Unfiltered");
 			return identifiers;
 		} else {
+			System.out.println("Filtered: " + other.toString());
 			return other;
 		}
 	}
