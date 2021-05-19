@@ -96,6 +96,7 @@ public class UniqueState extends PersistentState implements UniquifierProperties
 		if (this.impl.contains("maxCount", INT)) {
 			return this.impl.getInt("maxCount");
 		} else {
+			this.impl.putInt("maxCount", 0);
 			return 0;
 		}
 	}
@@ -105,8 +106,14 @@ public class UniqueState extends PersistentState implements UniquifierProperties
 		if (this.impl.contains("minCount", INT)) {
 			return this.impl.getInt("minCount");
 		} else {
+			this.impl.putInt("minCount", 0);
 			return 0;
 		}
+	}
+
+	@Override
+	public String toString() {
+		return "UniqueState{" + this.impl.toString() + "}";
 	}
 
 	private static final byte INT = 3;

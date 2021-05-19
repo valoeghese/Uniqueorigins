@@ -25,6 +25,8 @@ import java.util.List;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
+import javax.annotation.Nullable;
+
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Overwrite;
 import org.spongepowered.asm.mixin.Shadow;
@@ -43,22 +45,23 @@ import valoeghese.uniqueorigins.Uniqueorigins.UniquifierProperties;
 
 @Mixin(value = OriginLayer.class, remap = false)
 public class MixinOriginLayer {
-	private <E extends Collection<Identifier>> E filter(E identifiers, UniquifierProperties properties, Collector<Identifier, ?, E> collector) {
+	private <E extends Collection<Identifier>> E filter(@Nullable PlayerEntity player, E identifiers, UniquifierProperties properties, Collector<Identifier, ?, E> collector) {
 		E result = identifiers.stream()
 				.filter(id -> {
-					int origin = properties.getOriginCount(id);
-					return origin < properties.getMaxOriginCount() || origin == properties.getMinOriginCount(); // if max and min are the same, special case. I tried simpler implementations of this but it deletes every origin which is cringe
+					int originCount = properties.getOriginCount(id);
+					return originCount < properties.getMaxOriginCount() || originCount == properties.getMinOriginCount(); // if max and min are the same, special case keep it. I tried simpler implementations of this but it deletes every origin which is cringe
 				})
 				.collect(collector);
-		System.out.println(this.identifier + "\tModified: " + result.toString());
+//		System.out.println(this.identifier + "\tModified: " + result.toString() + "\t" + properties.toString());
 		return result;
 	}
+
 	@Inject(at= @At("RETURN"), method = "getRandomOrigins", cancellable = true)
 	private void makeOriginsUniqueRandom(PlayerEntity entity, CallbackInfoReturnable<List<Identifier>> info) {
 		if (!entity.getEntityWorld().isClient()) {
 			UniquifierProperties properties = Uniqueorigins.getOriginData(entity);
 			info.setReturnValue(
-					filter(info.getReturnValue(), properties, Collectors.toList())
+					filter(entity, info.getReturnValue(), properties, Collectors.toList())
 					);
 		}
 	}
