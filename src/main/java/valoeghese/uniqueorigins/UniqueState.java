@@ -19,6 +19,8 @@
 
 package valoeghese.uniqueorigins;
 
+import java.util.function.IntPredicate;
+
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.util.Identifier;
 import net.minecraft.world.PersistentState;
@@ -56,42 +58,52 @@ public class UniqueState extends PersistentState implements UniquifierProperties
 
 	@Override
 	public void addOriginCount(Identifier origin) {
-		String str = origin.toString();
-		int count = getOriginCount(origin) + 1;
-		this.impl.putInt(str, count);
-
-		if (count > getMaxOriginCount()) {
-			this.impl.putInt("maxCount", count);
-		}
+		updateOriginCount(origin, "minCount", getMinOriginCount(), "maxCount", i -> i > getMaxOriginCount(), 1);
 	}
 
 	@Override
 	public void removeOriginCount(Identifier origin) {
+		updateOriginCount(origin, "maxCount", getMaxOriginCount(), "minCount", i -> i < getMinOriginCount(), -1);
+	}
+
+	private void updateOriginCount(Identifier origin, String storageComputed, int borderlineComputed, String storageSimple, IntPredicate borderlineSimple, int increment) {
 		String str = origin.toString(); // get the string representation for the c.t. nbt
 		int count = getOriginCount(origin); // get the old count
-		boolean recomputeMax = count == getMaxOriginCount(); // if it was the max, we need to recompute the maximum
-		this.impl.putInt(str, count - 1); // set the new count
+		boolean recompute = count == borderlineComputed; // if it was the border, we need to recompute the computed one
+		this.impl.putInt(str, count + increment); // set the new count
 
-		if (recomputeMax) {
-			boolean decrMax = true;
+		if (recompute) {
+			boolean updateBorder = true;
 
 			for (String k : this.impl.getKeys()) {
-				if (getOriginCount(k) == count) { // if the old count still exists
-					decrMax = false;
+				if (getOriginCount(k) == count) { // if the old count (guaranteeed to be old min) still exists
+					updateBorder = false;
 					break;
 				}
 			}
 
-			if (decrMax) { // if the old count doesn't exist, count - 1 is guaranteed to exist. Put it there.
-				this.impl.putInt("maxCount", count - 1);
+			if (updateBorder) { // if the old count doesn't exist, count + increment is guaranteed to exist because we only use values +1 and -1 and in very sane places. Put it there.
+				this.impl.putInt(storageComputed, count + increment);
 			}
 		}
-	}
 
+		if (borderlineSimple.test(count)) {
+			this.impl.putInt(storageSimple, count);
+		}
+	}
 	@Override
 	public int getMaxOriginCount() {
 		if (this.impl.contains("maxCount", INT)) {
 			return this.impl.getInt("maxCount");
+		} else {
+			return 0;
+		}
+	}
+
+	@Override
+	public int getMinOriginCount() {
+		if (this.impl.contains("minCount", INT)) {
+			return this.impl.getInt("minCount");
 		} else {
 			return 0;
 		}

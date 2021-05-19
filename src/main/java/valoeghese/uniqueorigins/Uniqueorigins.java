@@ -56,6 +56,10 @@ public class Uniqueorigins implements ModInitializer {
 
 	public interface UniquifierProperties {
 		/**
+		 * @return the lowest count of any origin.
+		 */
+		int getMinOriginCount();
+		/**
 		 * @return the highest count of any origin.
 		 */
 		int getMaxOriginCount();

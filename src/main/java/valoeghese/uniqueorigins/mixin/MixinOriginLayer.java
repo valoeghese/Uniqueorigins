@@ -48,11 +48,11 @@ public class MixinOriginLayer {
 				.filter(id -> properties.getOriginCount(id) < properties.getMaxOriginCount())
 				.collect(collector);
 
-		if (other.isEmpty() && !(identifiers.size() == 1)) {
-			System.out.println("Unfiltered");
+		if (other.isEmpty() && identifiers.size() > 1) {
+			System.out.println(this.identifier + "\tUnfiltered");
 			return identifiers;
 		} else {
-			System.out.println("Filtered: " + other.toString());
+			System.out.println(this.identifier + "\tFiltered: " + other.toString());
 			return other;
 		}
 	}
@@ -65,16 +65,6 @@ public class MixinOriginLayer {
 					);
 		}
 	}
-
-	/*@Inject(at= @At("RETURN"), method = "getOrigins", cancellable = true)
-	private void makeOriginsUniqueNormal(PlayerEntity entity, CallbackInfoReturnable<List<Identifier>> info) {
-		if (!entity.getEntityWorld().isClient()) {
-			UniquifierProperties properties = Uniqueorigins.getOriginData(entity);
-			info.setReturnValue(
-					filter(info.getReturnValue(), properties, Collectors.toList())
-					);
-		}
-	}*/
 
 	@Shadow
 	private Identifier identifier;

@@ -50,6 +50,9 @@ dependencies {
 		exclude group: 'com.terraformersmc', module: 'modmenu'
 	}
 	
+	modRuntime ("com.github.SuperCoder7979:databreaker:715b589") {
+		exclude module: "fabric-loader"
+	}
 	compileOnly "com.google.code.findbugs:jsr305:3.0.2"
 }
 
