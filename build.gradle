@@ -56,11 +56,6 @@ dependencies {
 	compileOnly "com.google.code.findbugs:jsr305:3.0.2"
 }
 
-tasks.register('copyLibsToRun', Copy) {
-    from layout.buildDirectory.dir("../libs")
-    into layout.buildDirectory.dir("../run/mods")
-}
-
 processResources {
 	inputs.property "version", project.version
 	from(sourceSets.main.resources.srcDirs) {
