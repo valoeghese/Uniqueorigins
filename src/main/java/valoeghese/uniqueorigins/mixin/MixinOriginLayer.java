@@ -25,8 +25,6 @@ import java.util.List;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
-import javax.annotation.Nullable;
-
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Overwrite;
 import org.spongepowered.asm.mixin.Shadow;
@@ -34,6 +32,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
+import io.github.apace100.origins.component.OriginComponent;
 import io.github.apace100.origins.origin.OriginLayer;
 import io.github.apace100.origins.origin.OriginLayer.ConditionedOrigin;
 import net.minecraft.entity.player.PlayerEntity;
@@ -41,19 +40,21 @@ import net.minecraft.network.PacketByteBuf;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.Identifier;
 import valoeghese.uniqueorigins.Uniqueorigins;
+import valoeghese.uniqueorigins.Uniqueorigins.HackedOriginLayer;
 import valoeghese.uniqueorigins.Uniqueorigins.UniquifierProperties;
 
 @Mixin(value = OriginLayer.class, remap = false)
-public class MixinOriginLayer {
-	private <E extends Collection<Identifier>> E filter(PlayerEntity player, E identifiers, UniquifierProperties properties, Collector<Identifier, ?, E> collector) {
+public class MixinOriginLayer implements HackedOriginLayer {
+	private <E extends Collection<Identifier>> E filter(E identifiers, UniquifierProperties properties, Collector<Identifier, ?, E> collector) {
 		E result = identifiers.stream()
-				.filter(id -> {
-					int originCount = properties.getOriginCount(id);
-					return originCount < properties.getMaxOriginCount() || originCount == properties.getMinOriginCount(); // if max and min are the same, special case keep it. I tried simpler implementations of this but it deletes every origin which is cringe
-				})
+				.filter(id -> shouldFilter(id, properties))
 				.collect(collector);
-//		System.out.println(this.identifier + "\tModified: " + result.toString() + "\t" + properties.toString());
 		return result;
+	}
+
+	private boolean shouldFilter(Identifier id, UniquifierProperties properties) {
+		int originCount = properties.getOriginCount(id);
+		return originCount < properties.getMaxOriginCount() || originCount == properties.getMinOriginCount(); // if max and min are the same, special case keep it. I tried simpler implementations of this but it deletes every origin which is cringe
 	}
 
 	@Inject(at= @At("RETURN"), method = "getRandomOrigins", cancellable = true)
@@ -61,7 +62,7 @@ public class MixinOriginLayer {
 		if (!entity.getEntityWorld().isClient()) {
 			UniquifierProperties properties = Uniqueorigins.getOriginData(entity);
 			info.setReturnValue(
-					filter(entity, info.getReturnValue(), properties, Collectors.toList())
+					filter(info.getReturnValue(), properties, Collectors.toList())
 					);
 		}
 	}
@@ -81,14 +82,14 @@ public class MixinOriginLayer {
 	@Shadow
 	private boolean autoChooseIfNoChoice;
 
-	@Overwrite // Gonna move this mixin to run a bit later to fix some reconnection networking issues
-	public void write(PacketByteBuf buffer) {
+	@Overwrite
+	public void writeFirstLogin(OriginComponent component, PacketByteBuf buffer) {
 		// Old code
 		buffer.writeString(identifier.toString());
 		buffer.writeInt(order);
-		buffer.writeBoolean(enabled);
 
 		OriginLayer ol = (OriginLayer) (Object) this;
+		buffer.writeBoolean(enabled);
 
 		// Replaced Code Starts Here ===================================
 		MinecraftServer server = Uniqueorigins.sidedProxy.getCurrentServer(); // get the server
@@ -101,12 +102,13 @@ public class MixinOriginLayer {
 			toWrite.add(
 					new ConditionedOrigin( // filter out the options
 							((AccessorConditionedOrigin) origin).getCondition(),
-							filter(null, origin.getOrigins(), properties, Collectors.toList()))
+							filter(origin.getOrigins(), properties, Collectors.toList()))
 					);
 		}
 
 		buffer.writeInt(toWrite.size()); // write the new data
 		toWrite.forEach(co -> co.write(buffer));
+
 		// Replaced Code Ends Here ==========================================
 
 		buffer.writeString(ol.getOrCreateTranslationKey());

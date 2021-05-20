@@ -22,10 +22,12 @@ package valoeghese.uniqueorigins;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import io.github.apace100.origins.component.OriginComponent;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.network.PacketByteBuf;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.Identifier;
 import net.minecraft.world.World;
@@ -52,6 +54,10 @@ public class Uniqueorigins implements ModInitializer {
 
 	public static UniquifierProperties getOriginData(MinecraftServer server) {
 		return server.getWorld(World.OVERWORLD).getPersistentStateManager().getOrCreate(UniqueState::new, ID);
+	}
+
+	public interface HackedOriginLayer {
+		void writeFirstLogin(OriginComponent component, PacketByteBuf buffer);
 	}
 
 	public interface UniquifierProperties {

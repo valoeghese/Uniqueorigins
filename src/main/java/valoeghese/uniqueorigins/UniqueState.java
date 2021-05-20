@@ -67,30 +67,33 @@ public class UniqueState extends PersistentState implements UniquifierProperties
 	}
 
 	private void updateOriginCount(Identifier origin, String storageComputed, int borderlineComputed, String storageSimple, IntPredicate borderlineSimple, int increment) {
-		String str = origin.toString(); // get the string representation for the c.t. nbt
-		int count = getOriginCount(origin); // get the old count
-		boolean recompute = count == borderlineComputed; // if it was the border, we need to recompute the computed one
-		this.impl.putInt(str, count + increment); // set the new count
+		if (!origin.toString().equals("origins:empty")) {
+			String str = origin.toString(); // get the string representation for the c.t. nbt
+			int count = getOriginCount(origin); // get the old count
+			boolean recompute = count == borderlineComputed; // if it was the border, we need to recompute the computed one
+			this.impl.putInt(str, count + increment); // set the new count
 
-		if (recompute) {
-			boolean updateBorder = true;
+			if (recompute) {
+				boolean updateBorder = true;
 
-			for (String k : this.impl.getKeys()) {
-				if (getOriginCount(k) == count) { // if the old count (guaranteeed to be old min) still exists
-					updateBorder = false;
-					break;
+				for (String k : this.impl.getKeys()) {
+					if (getOriginCount(k) == count) { // if the old count (guaranteeed to be old min) still exists
+						updateBorder = false;
+						break;
+					}
+				}
+
+				if (updateBorder) { // if the old count doesn't exist, count + increment is guaranteed to exist because we only use values +1 and -1 and in very sane places. Put it there.
+					this.impl.putInt(storageComputed, count + increment);
 				}
 			}
 
-			if (updateBorder) { // if the old count doesn't exist, count + increment is guaranteed to exist because we only use values +1 and -1 and in very sane places. Put it there.
-				this.impl.putInt(storageComputed, count + increment);
+			if (borderlineSimple.test(count)) {
+				this.impl.putInt(storageSimple, count);
 			}
 		}
-
-		if (borderlineSimple.test(count)) {
-			this.impl.putInt(storageSimple, count);
-		}
 	}
+
 	@Override
 	public int getMaxOriginCount() {
 		if (this.impl.contains("maxCount", INT)) {
