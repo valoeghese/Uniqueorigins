@@ -48,7 +48,7 @@ public abstract class MixinPlayerOriginComponent {
 			if(oldOrigin != origin) {
 				// now our actual code starts
 				// we edit our persistent state information to update who has what
-				UniquifierProperties properties = Uniqueorigins.getOriginData(this.player);
+				UniquifierProperties properties = Uniqueorigins.getOriginData(this.player.getServer());
 
 				if (oldOrigin != null) {
 					System.out.println("Removing from the unique origin count: " + oldOrigin.getIdentifier());

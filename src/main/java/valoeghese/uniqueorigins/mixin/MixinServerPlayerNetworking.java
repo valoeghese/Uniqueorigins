@@ -52,7 +52,7 @@ public class MixinServerPlayerNetworking {
 			OriginLayers.getLayers().forEach((layer) -> {
 				// If should overwrite. We do not need the first check as origins already has set it to empty by now
 				if (/*!component.hasOrigin(layer) || */component.getOrigin(layer).equals(Origin.EMPTY)) {
-					((HackedOriginLayer) layer).writeFirstLogin(component, originLayerData);
+					((HackedOriginLayer) layer).writeFirstLogin(player, originLayerData);
 				} else { // otherwise don't f*ck up the client on reconnect
 					layer.write(originLayerData);
 				}

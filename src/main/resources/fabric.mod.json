@@ -8,9 +8,8 @@
   "authors": [
     "Valoeghese"
   ],
-  
-  "icon": "assets/uniqueorigins/icon.png",
-  "license": "No Licence.",
+
+  "license": "LGPL-3.0",
   
   "environment": "*",
   

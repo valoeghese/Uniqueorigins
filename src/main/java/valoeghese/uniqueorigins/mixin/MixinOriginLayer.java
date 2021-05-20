@@ -31,12 +31,10 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-import io.github.apace100.origins.component.OriginComponent;
 import io.github.apace100.origins.origin.OriginLayer;
 import io.github.apace100.origins.origin.OriginLayer.ConditionedOrigin;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.network.PacketByteBuf;
-import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.Identifier;
 import valoeghese.uniqueorigins.Uniqueorigins;
 import valoeghese.uniqueorigins.Uniqueorigins.HackedOriginLayer;
@@ -59,7 +57,7 @@ public class MixinOriginLayer implements HackedOriginLayer {
 	@Inject(at= @At("RETURN"), method = "getRandomOrigins", cancellable = true)
 	private void makeOriginsUniqueRandom(PlayerEntity entity, CallbackInfoReturnable<List<Identifier>> info) {
 		if (!entity.getEntityWorld().isClient()) {
-			UniquifierProperties properties = Uniqueorigins.getOriginData(entity);
+			UniquifierProperties properties = Uniqueorigins.getOriginData(entity.getServer());
 			info.setReturnValue(
 					filter(info.getReturnValue(), properties, Collectors.toList())
 					);
@@ -82,7 +80,7 @@ public class MixinOriginLayer implements HackedOriginLayer {
 	private boolean autoChooseIfNoChoice;
 
 	@Override
-	public void writeFirstLogin(OriginComponent component, PacketByteBuf buffer) {
+	public void writeFirstLogin(PlayerEntity player, PacketByteBuf buffer) {
 		// Old code
 		buffer.writeString(identifier.toString());
 		buffer.writeInt(order);
@@ -91,8 +89,7 @@ public class MixinOriginLayer implements HackedOriginLayer {
 		buffer.writeBoolean(enabled);
 
 		// Replaced Code Starts Here ===================================
-		MinecraftServer server = Uniqueorigins.sidedProxy.getCurrentServer(); // get the server
-		UniquifierProperties properties = Uniqueorigins.getOriginData(server); // get the properties from the server
+		UniquifierProperties properties = Uniqueorigins.getOriginData(player.getServer()); // get the properties from the server
 
 		List<ConditionedOrigin> toWrite = new ArrayList<>();
 

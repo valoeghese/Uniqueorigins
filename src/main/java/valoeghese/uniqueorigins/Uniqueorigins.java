@@ -22,34 +22,20 @@ package valoeghese.uniqueorigins;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import io.github.apace100.origins.component.OriginComponent;
-import net.fabricmc.api.EnvType;
 import net.fabricmc.api.ModInitializer;
-import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.network.PacketByteBuf;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.Identifier;
 import net.minecraft.world.World;
-import valoeghese.uniqueorigins.proxy.ClientProxy;
-import valoeghese.uniqueorigins.proxy.CommonProxy;
-import valoeghese.uniqueorigins.proxy.ServerProxy;
 
 public class Uniqueorigins implements ModInitializer {
 	public static final Logger LOGGER = LogManager.getLogger("Uniqueorigins");
 	private static final String ID = "uniqueorigindata";
-	public static CommonProxy sidedProxy; // Yes this is outdated practise but trust me bro
 
 	@Override
-	@SuppressWarnings("deprecation")
 	public void onInitialize() {
 		LOGGER.info("Making sure your origins will be more... unique~");
-		FabricLoader loader = FabricLoader.getInstance();
-		sidedProxy = loader.getEnvironmentType() == EnvType.CLIENT ? new ClientProxy(loader.getGameInstance()) : new ServerProxy(loader.getGameInstance());
-	}
-
-	public static UniquifierProperties getOriginData(PlayerEntity entity) {
-		return getOriginData(entity.getEntityWorld().getServer());
 	}
 
 	public static UniquifierProperties getOriginData(MinecraftServer server) {
@@ -57,7 +43,7 @@ public class Uniqueorigins implements ModInitializer {
 	}
 
 	public interface HackedOriginLayer {
-		void writeFirstLogin(OriginComponent component, PacketByteBuf buffer);
+		void writeFirstLogin(PlayerEntity entity, PacketByteBuf buffer);
 	}
 
 	public interface UniquifierProperties {
