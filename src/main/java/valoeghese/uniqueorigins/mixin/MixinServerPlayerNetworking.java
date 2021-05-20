@@ -43,7 +43,7 @@ import valoeghese.uniqueorigins.Uniqueorigins.HackedOriginLayer;
 @Mixin(value = ServerPlayNetworking.class, remap = false)
 public class MixinServerPlayerNetworking {
 	@Inject(at = @At("HEAD"), method = "send", cancellable = true)
-	public static void overwriteDataOnFirstLogin(ServerPlayerEntity player, Identifier channelName, PacketByteBuf buf, CallbackInfo info) {
+	private static void overwriteDataOnFirstLogin(ServerPlayerEntity player, Identifier channelName, PacketByteBuf buf, CallbackInfo info) {
 		if (channelName.equals(ModPackets.LAYER_LIST)) {
 			OriginComponent component = ModComponents.ORIGIN.get(player);
 			PacketByteBuf originLayerData = new PacketByteBuf(Unpooled.buffer());

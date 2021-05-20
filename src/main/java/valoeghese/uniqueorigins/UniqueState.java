@@ -92,6 +92,8 @@ public class UniqueState extends PersistentState implements UniquifierProperties
 				this.impl.putInt(storageSimple, count);
 			}
 		}
+		
+		this.markDirty();
 	}
 
 	@Override
@@ -100,6 +102,7 @@ public class UniqueState extends PersistentState implements UniquifierProperties
 			return this.impl.getInt("maxCount");
 		} else {
 			this.impl.putInt("maxCount", 0);
+			this.markDirty();
 			return 0;
 		}
 	}
@@ -110,6 +113,7 @@ public class UniqueState extends PersistentState implements UniquifierProperties
 			return this.impl.getInt("minCount");
 		} else {
 			this.impl.putInt("minCount", 0);
+			this.markDirty();
 			return 0;
 		}
 	}

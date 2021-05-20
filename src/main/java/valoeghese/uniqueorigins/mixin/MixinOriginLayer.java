@@ -26,7 +26,6 @@ import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Overwrite;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -82,7 +81,7 @@ public class MixinOriginLayer implements HackedOriginLayer {
 	@Shadow
 	private boolean autoChooseIfNoChoice;
 
-	@Overwrite
+	@Override
 	public void writeFirstLogin(OriginComponent component, PacketByteBuf buffer) {
 		// Old code
 		buffer.writeString(identifier.toString());
