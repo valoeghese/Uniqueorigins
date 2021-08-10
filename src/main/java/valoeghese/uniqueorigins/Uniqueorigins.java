@@ -29,6 +29,8 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.Identifier;
 import net.minecraft.world.World;
 
+import java.util.List;
+
 public class Uniqueorigins implements ModInitializer {
 	public static final Logger LOGGER = LogManager.getLogger("Uniqueorigins");
 	private static final String ID = "uniqueorigindata";
@@ -48,28 +50,23 @@ public class Uniqueorigins implements ModInitializer {
 
 	public interface UniquifierProperties {
 		/**
-		 * @return the lowest count of any origin.
+		 *
+		 * @param layer the given layer
+		 * @param origins the list of origins on the layer
+		 * @return the filtered list of origins with saturated origins removed
 		 */
-		int getMinOriginCount();
-		/**
-		 * @return the highest count of any origin.
-		 */
-		int getMaxOriginCount();
-		/**
-		 * Retrieves the count of a given origin.
-		 * @param identifier the given origin
-		 * @return the number of players with that origin
-		 */
-		int getOriginCount(Identifier identifier);
+		List<Identifier> filter(Identifier layer, List<Identifier> origins);
 		/**
 		 * Increments the count for the specified origin
+		 * @param layer the layer to increment the count for
 		 * @param origin the origin to increment the count for
 		 */
-		void addOriginCount(Identifier origin);
+		void incrementOriginCount(Identifier layer, Identifier origin);
 		/**
 		 * Decrement the count for the specified origin
+		 * @param layer the layer to decrement the count for
 		 * @param origin the origin to decrement the count for
 		 */
-		void removeOriginCount(Identifier origin);
+		void decrementOriginCount(Identifier layer, Identifier origin);
 	}
 }

@@ -19,7 +19,9 @@
 
 package valoeghese.uniqueorigins;
 
-import java.util.function.IntPredicate;
+import java.util.List;
+import java.util.OptionalInt;
+import java.util.stream.Collectors;
 
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.util.Identifier;
@@ -43,79 +45,55 @@ public class UniqueState extends PersistentState implements UniquifierProperties
 		return this.impl;
 	}
 
-	@Override
-	public int getOriginCount(Identifier identifier) {
-		return getOriginCount(identifier.toString());
+	public List<Identifier> filter(Identifier layer, List<Identifier> origins){
+		OptionalInt min = origins.stream().mapToInt(origin -> getOriginCount(layer, origin)).min();
+		return origins.stream().filter(origin -> getOriginCount(layer, origin) <= min.orElse(0)).collect(Collectors.toList());
 	}
 
-	private int getOriginCount(String str) {
-		if (this.impl.contains(str, INT)) {
-			return this.impl.getInt(str);
-		} else {
+	private String getLayerKey(String layer){ return "Layer:" + layer; } // IDs can't have capital letters so we're safe
+
+	public int getOriginCount(Identifier layer, Identifier origin) {
+		return getOriginCount(layer.toString(), origin.toString());
+	}
+
+	private int getOriginCount(String layer, String origin) {
+		if (layer.equals(DEFAULT_LAYER))
+			return impl.contains(origin, INT) ? impl.getInt(origin) : 0;
+		String layerKey = getLayerKey(layer);
+		if (!impl.contains(layerKey, COMPOUND))
 			return 0;
-		}
+		CompoundTag layerTag = ((CompoundTag)impl.get(layerKey));
+		return layerTag != null && layerTag.contains(origin, INT) ? layerTag.getInt(origin) : 0;
 	}
 
 	@Override
-	public void addOriginCount(Identifier origin) {
-		updateOriginCount(origin, "minCount", getMinOriginCount(), "maxCount", i -> i > getMaxOriginCount(), 1);
+	public void incrementOriginCount(Identifier layer, Identifier origin) {
+		updateOriginCount(layer, origin, 1);
 	}
 
 	@Override
-	public void removeOriginCount(Identifier origin) {
-		updateOriginCount(origin, "maxCount", getMaxOriginCount(), "minCount", i -> i < getMinOriginCount(), -1);
+	public void decrementOriginCount(Identifier layer, Identifier origin) {
+		updateOriginCount(layer, origin, -1);
 	}
 
-	private void updateOriginCount(Identifier origin, String storageComputed, int borderlineComputed, String storageSimple, IntPredicate borderlineSimple, int increment) {
+	private void updateOriginCount(Identifier layer, Identifier origin, int increment) {
 		if (!origin.toString().equals("origins:empty")) {
-			String str = origin.toString(); // get the string representation for the c.t. nbt
-			int count = getOriginCount(origin); // get the old count
-			boolean recompute = count == borderlineComputed; // if it was the border, we need to recompute the computed one
-			this.impl.putInt(str, count + increment); // set the new count
-
-			if (recompute) {
-				boolean updateBorder = true;
-
-				for (String k : this.impl.getKeys()) {
-					if (getOriginCount(k) == count) { // if the old count (guaranteeed to be old min) still exists
-						updateBorder = false;
-						break;
-					}
-				}
-
-				if (updateBorder) { // if the old count doesn't exist, count + increment is guaranteed to exist because we only use values +1 and -1 and in very sane places. Put it there.
-					this.impl.putInt(storageComputed, count + increment);
-				}
-			}
-
-			if (borderlineSimple.test(count)) {
-				this.impl.putInt(storageSimple, count);
+			String o = origin.toString(); // get the string representation for the c.t. nbt
+			String l = layer.toString(); // same thing for layer whatever you get the idea
+			int count = getOriginCount(o, l); // get the old count
+			// Set the new count
+			if (l.equals(DEFAULT_LAYER))
+				impl.putInt(o, count + increment); // backward compatibility, treating default layer specially
+			else {
+				String lk = getLayerKey(l);
+				if (!impl.contains(lk) || !(impl.get(lk) instanceof CompoundTag))
+					impl.put(lk, new CompoundTag());
+				CompoundTag lt = (CompoundTag)impl.get(lk);
+				if (lt != null) // IntelliJ doesn't seem to think it's impossible for it to be null so
+					lt.putInt(o, count + increment);
 			}
 		}
-		
 		this.markDirty();
-	}
-
-	@Override
-	public int getMaxOriginCount() {
-		if (this.impl.contains("maxCount", INT)) {
-			return this.impl.getInt("maxCount");
-		} else {
-			this.impl.putInt("maxCount", 0);
-			this.markDirty();
-			return 0;
-		}
-	}
-
-	@Override
-	public int getMinOriginCount() {
-		if (this.impl.contains("minCount", INT)) {
-			return this.impl.getInt("minCount");
-		} else {
-			this.impl.putInt("minCount", 0);
-			this.markDirty();
-			return 0;
-		}
 	}
 
 	@Override
@@ -124,4 +102,6 @@ public class UniqueState extends PersistentState implements UniquifierProperties
 	}
 
 	private static final byte INT = 3;
+	private static final byte COMPOUND = 10;
+	private static final String DEFAULT_LAYER = "origins:origin";
 }
