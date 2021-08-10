@@ -46,7 +46,7 @@ public abstract class MixinOriginLayer implements HackedOriginLayer {
 			@SuppressWarnings("ConstantConditions")
 			UniquifierProperties properties = Uniqueorigins.getOriginData(entity.getServer());
 			info.setReturnValue(
-				properties.filter(this.getIdentifier(), info.getReturnValue())
+				properties.filter(this.getIdentifier(), info.getReturnValue(), this.getOrigins())
 			);
 		}
 	}
@@ -67,6 +67,8 @@ public abstract class MixinOriginLayer implements HackedOriginLayer {
 	private boolean autoChooseIfNoChoice;
 
 	@Shadow public abstract Identifier getIdentifier();
+
+	@Shadow public abstract List<Identifier> getOrigins();
 
 	@Override
 	public void writeFirstLogin(PlayerEntity player, PacketByteBuf buffer) {
@@ -90,7 +92,7 @@ public abstract class MixinOriginLayer implements HackedOriginLayer {
 			toWrite.add(
 					new ConditionedOrigin( // filter out the options
 							((AccessorConditionedOrigin) origin).getCondition(),
-							properties.filter(this.getIdentifier(), origin.getOrigins()))
+							properties.filter(this.getIdentifier(), origin.getOrigins(), this.getOrigins()))
 					);
 		}
 

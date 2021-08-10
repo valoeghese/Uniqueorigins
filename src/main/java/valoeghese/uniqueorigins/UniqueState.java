@@ -45,18 +45,22 @@ public class UniqueState extends PersistentState implements UniquifierProperties
 		return this.impl;
 	}
 
-	public List<Identifier> filter(Identifier layer, List<Identifier> origins){
-		OptionalInt min = origins.stream().mapToInt(origin -> getOriginCount(layer, origin)).min();
-		return origins.stream().filter(origin -> getOriginCount(layer, origin) <= min.orElse(0)).collect(Collectors.toList());
+	public List<Identifier> filter(Identifier layer, List<Identifier> conditionedOrigins, List<Identifier> layerOrigins){
+		OptionalInt min = layerOrigins.stream().mapToInt(origin -> getOriginCount(layer, origin)).min();
+		return conditionedOrigins.stream().filter(origin -> getOriginCount(layer, origin) <= min.orElse(0)).collect(Collectors.toList());
 	}
 
 	private String getLayerKey(String layer){ return "Layer:" + layer; } // IDs can't have capital letters so we're safe
 
-	public int getOriginCount(Identifier layer, Identifier origin) {
+	private int getOriginCount(Identifier layer, Identifier origin) {
 		return getOriginCount(layer.toString(), origin.toString());
 	}
 
-	private int getOriginCount(String layer, String origin) {
+	private int getOriginCount(String layer, String origin){
+		return Math.max(getStoredOriginCount(layer, origin), 0); // prevents possibles issues with false numbers stored, I guess
+	}
+
+	private int getStoredOriginCount(String layer, String origin) {
 		if (layer.equals(DEFAULT_LAYER))
 			return impl.contains(origin, INT) ? impl.getInt(origin) : 0;
 		String layerKey = getLayerKey(layer);
@@ -68,11 +72,15 @@ public class UniqueState extends PersistentState implements UniquifierProperties
 
 	@Override
 	public void incrementOriginCount(Identifier layer, Identifier origin) {
+		if (!origin.toString().equals("origins:empty"))
+			Uniqueorigins.LOGGER.info("Adding 1 to the unique origin count of " + origin + " on layer " + layer);
 		updateOriginCount(layer, origin, 1);
 	}
 
 	@Override
 	public void decrementOriginCount(Identifier layer, Identifier origin) {
+		if (!origin.toString().equals("origins:empty"))
+			Uniqueorigins.LOGGER.info("Removing 1 from the unique origin count of " + origin + " on layer " + layer);
 		updateOriginCount(layer, origin, -1);
 	}
 
@@ -80,7 +88,7 @@ public class UniqueState extends PersistentState implements UniquifierProperties
 		if (!origin.toString().equals("origins:empty")) {
 			String o = origin.toString(); // get the string representation for the c.t. nbt
 			String l = layer.toString(); // same thing for layer whatever you get the idea
-			int count = getOriginCount(o, l); // get the old count
+			int count = getOriginCount(l, o); // get the old count
 			// Set the new count
 			if (l.equals(DEFAULT_LAYER))
 				impl.putInt(o, count + increment); // backward compatibility, treating default layer specially

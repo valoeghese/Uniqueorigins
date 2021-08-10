@@ -51,12 +51,9 @@ public abstract class MixinPlayerOriginComponent {
 				@SuppressWarnings("ConstantConditions")
 				UniquifierProperties properties = Uniqueorigins.getOriginData(this.player.getServer());
 
-				if (oldOrigin != null) {
-					Uniqueorigins.LOGGER.info("Removing 1 from the unique origin count of " + oldOrigin.getIdentifier() + " on layer " + layer.getIdentifier());
+				if (oldOrigin != null)
 					properties.decrementOriginCount(layer.getIdentifier(), oldOrigin.getIdentifier());
-				}
 
-				Uniqueorigins.LOGGER.info("Adding 1 to the unique origin count of " + origin.getIdentifier() + " on layer " + layer.getIdentifier());
 				properties.incrementOriginCount(layer.getIdentifier(), origin.getIdentifier());
 			}
 		}

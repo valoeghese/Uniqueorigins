@@ -52,10 +52,11 @@ public class Uniqueorigins implements ModInitializer {
 		/**
 		 *
 		 * @param layer the given layer
-		 * @param origins the list of origins on the layer
+		 * @param conditionedOrigins the list of conditioned origins to filter
+		 * @param layerOrigins the list of origins on the layer
 		 * @return the filtered list of origins with saturated origins removed
 		 */
-		List<Identifier> filter(Identifier layer, List<Identifier> origins);
+		List<Identifier> filter(Identifier layer, List<Identifier> conditionedOrigins, List<Identifier> layerOrigins);
 		/**
 		 * Increments the count for the specified origin
 		 * @param layer the layer to increment the count for
