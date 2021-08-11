@@ -21,9 +21,14 @@ package valoeghese.uniqueorigins;
 
 import java.util.List;
 import java.util.OptionalInt;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.text.Text;
+import net.minecraft.text.TranslatableText;
 import net.minecraft.util.Identifier;
 import net.minecraft.world.PersistentState;
 import valoeghese.uniqueorigins.Uniqueorigins.UniquifierProperties;
@@ -45,9 +50,69 @@ public class UniqueState extends PersistentState implements UniquifierProperties
 		return this.impl;
 	}
 
+	@Override
+	public int getFilter(Identifier layer, BiConsumer<Text, Boolean> feedback, Consumer<Text> error){
+		AtomicBoolean layerTagPresent = new AtomicBoolean(true);
+		boolean filtered = isFiltered(layer, () -> layerTagPresent.set(false)); // this sounds overkill
+		if (!layerTagPresent.get())
+			error.accept(new TranslatableText("The layer %s is not registered", layer));
+		else
+			feedback.accept(new TranslatableText(
+			"Layer %s is" + (filtered ? " " : " not ") + "filtered",
+			layer), false);
+		return filtered ? 1 : 0;
+	}
+
+	@Override
+	public int setFilter(Identifier layer, boolean value, BiConsumer<Text, Boolean> feedback, Consumer<Text> error){
+		CompoundTag layerTag = getLayerTag(layer);
+		if (layerTag == null)
+			error.accept(new TranslatableText("The layer %s is not registered", layer));
+		else {
+			feedback.accept(new TranslatableText(
+				"The filtering of layer %s was changed from %s to %s",
+				layer, !layerTag.contains("Filtered") || layerTag.getBoolean("Filtered"), value), false);
+			layerTag.putBoolean("Filtered", value);
+			this.markDirty();
+		}
+		return value ? 1 : 0;
+	}
+
+	@Override
+	public int toggleFilter(Identifier layer, BiConsumer<Text, Boolean> feedback, Consumer<Text> error){
+		return setFilter(layer, !isFiltered(layer), feedback, error);
+	}
+
+	private boolean isFiltered(Identifier layer){
+		return isFiltered(layer, null);
+	}
+
+	private boolean isFiltered(Identifier layer, Runnable onNoTag){
+		CompoundTag layerTag = getLayerTag(layer);
+		if (layerTag == null && onNoTag != null)
+			onNoTag.run();
+		return layerTag == null
+			|| (!layerTag.contains("Filtered")
+				|| layerTag.getBoolean("Filtered"));
+	}
+
 	public List<Identifier> filter(Identifier layer, List<Identifier> conditionedOrigins, List<Identifier> layerOrigins){
+		if (!isFiltered(layer))
+			return conditionedOrigins;
 		OptionalInt min = layerOrigins.stream().mapToInt(origin -> getOriginCount(layer, origin)).min();
 		return conditionedOrigins.stream().filter(origin -> getOriginCount(layer, origin) <= min.orElse(0)).collect(Collectors.toList());
+	}
+
+	private CompoundTag getLayerTag(Identifier layer){
+		return getLayerTag(layer.toString());
+	}
+
+	private CompoundTag getLayerTag(String layer){
+		if (layer.equals(DEFAULT_LAYER))
+			return impl;
+		if (!impl.contains(getLayerKey(layer), COMPOUND))
+			return null;
+		return (CompoundTag)impl.get(getLayerKey(layer));
 	}
 
 	private String getLayerKey(String layer){ return "Layer:" + layer; } // IDs can't have capital letters so we're safe
@@ -63,10 +128,7 @@ public class UniqueState extends PersistentState implements UniquifierProperties
 	private int getStoredOriginCount(String layer, String origin) {
 		if (layer.equals(DEFAULT_LAYER))
 			return impl.contains(origin, INT) ? impl.getInt(origin) : 0;
-		String layerKey = getLayerKey(layer);
-		if (!impl.contains(layerKey, COMPOUND))
-			return 0;
-		CompoundTag layerTag = ((CompoundTag)impl.get(layerKey));
+		CompoundTag layerTag = getLayerTag(layer);
 		return layerTag != null && layerTag.contains(origin, INT) ? layerTag.getInt(origin) : 0;
 	}
 
