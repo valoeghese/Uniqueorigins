@@ -35,7 +35,7 @@ import valoeghese.uniqueorigins.Uniqueorigins.UniquifierProperties;
 @Mixin(value = PlayerOriginComponent.class, remap = false)
 public abstract class MixinPlayerOriginComponent {
 	@Shadow
-	abstract Origin getOrigin(OriginLayer layer);
+	public abstract Origin getOrigin(OriginLayer layer);
 
 	@Shadow
 	private PlayerEntity player;
@@ -48,15 +48,13 @@ public abstract class MixinPlayerOriginComponent {
 			if(oldOrigin != origin) {
 				// now our actual code starts
 				// we edit our persistent state information to update who has what
+				@SuppressWarnings("ConstantConditions")
 				UniquifierProperties properties = Uniqueorigins.getOriginData(this.player.getServer());
 
-				if (oldOrigin != null) {
-					System.out.println("Removing from the unique origin count: " + oldOrigin.getIdentifier());
-					properties.removeOriginCount(oldOrigin.getIdentifier());
-				}
+				if (oldOrigin != null)
+					properties.decrementOriginCount(layer.getIdentifier(), oldOrigin.getIdentifier());
 
-				System.out.println("Adding to the unique origin count: " + origin.getIdentifier());
-				properties.addOriginCount(origin.getIdentifier());
+				properties.incrementOriginCount(layer.getIdentifier(), origin.getIdentifier());
 			}
 		}
 	}

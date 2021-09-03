@@ -20,10 +20,7 @@
 package valoeghese.uniqueorigins.mixin;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
-import java.util.stream.Collector;
-import java.util.stream.Collectors;
 
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -41,26 +38,16 @@ import valoeghese.uniqueorigins.Uniqueorigins.HackedOriginLayer;
 import valoeghese.uniqueorigins.Uniqueorigins.UniquifierProperties;
 
 @Mixin(value = OriginLayer.class, remap = false)
-public class MixinOriginLayer implements HackedOriginLayer {
-	private <E extends Collection<Identifier>> E filter(E identifiers, UniquifierProperties properties, Collector<Identifier, ?, E> collector) {
-		E result = identifiers.stream()
-				.filter(id -> shouldFilter(id, properties))
-				.collect(collector);
-		return result;
-	}
-
-	private boolean shouldFilter(Identifier id, UniquifierProperties properties) {
-		int originCount = properties.getOriginCount(id);
-		return originCount < properties.getMaxOriginCount() || originCount == properties.getMinOriginCount(); // if max and min are the same, special case keep it. I tried simpler implementations of this but it deletes every origin which is cringe
-	}
+public abstract class MixinOriginLayer implements HackedOriginLayer {
 
 	@Inject(at= @At("RETURN"), method = "getRandomOrigins", cancellable = true)
 	private void makeOriginsUniqueRandom(PlayerEntity entity, CallbackInfoReturnable<List<Identifier>> info) {
 		if (!entity.getEntityWorld().isClient()) {
+			@SuppressWarnings("ConstantConditions")
 			UniquifierProperties properties = Uniqueorigins.getOriginData(entity.getServer());
 			info.setReturnValue(
-					filter(info.getReturnValue(), properties, Collectors.toList())
-					);
+				properties.filter(this.getIdentifier(), info.getReturnValue(), this.getOrigins())
+			);
 		}
 	}
 
@@ -79,6 +66,10 @@ public class MixinOriginLayer implements HackedOriginLayer {
 	@Shadow
 	private boolean autoChooseIfNoChoice;
 
+	@Shadow public abstract Identifier getIdentifier();
+
+	@Shadow public abstract List<Identifier> getOrigins();
+
 	@Override
 	public void writeFirstLogin(PlayerEntity player, PacketByteBuf buffer) {
 		// Old code
@@ -89,16 +80,19 @@ public class MixinOriginLayer implements HackedOriginLayer {
 		buffer.writeBoolean(enabled);
 
 		// Replaced Code Starts Here ===================================
+
+		@SuppressWarnings("ConstantConditions")
 		UniquifierProperties properties = Uniqueorigins.getOriginData(player.getServer()); // get the properties from the server
 
 		List<ConditionedOrigin> toWrite = new ArrayList<>();
 
 		// Iterate for each conditioned origin and filter out :b:ad ones
+		//                                           comedy ---^
 		for (ConditionedOrigin origin : conditionedOrigins) {
 			toWrite.add(
 					new ConditionedOrigin( // filter out the options
 							((AccessorConditionedOrigin) origin).getCondition(),
-							filter(origin.getOrigins(), properties, Collectors.toList()))
+							properties.filter(this.getIdentifier(), origin.getOrigins(), this.getOrigins()))
 					);
 		}
 

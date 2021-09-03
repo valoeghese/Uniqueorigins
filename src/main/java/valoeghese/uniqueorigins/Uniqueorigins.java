@@ -19,6 +19,8 @@
 
 package valoeghese.uniqueorigins;
 
+import net.fabricmc.fabric.api.command.v1.CommandRegistrationCallback;
+import net.minecraft.text.Text;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -29,6 +31,10 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.Identifier;
 import net.minecraft.world.World;
 
+import java.util.List;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
+
 public class Uniqueorigins implements ModInitializer {
 	public static final Logger LOGGER = LogManager.getLogger("Uniqueorigins");
 	private static final String ID = "uniqueorigindata";
@@ -36,6 +42,9 @@ public class Uniqueorigins implements ModInitializer {
 	@Override
 	public void onInitialize() {
 		LOGGER.info("Making sure your origins will be more... unique~");
+		CommandRegistrationCallback.EVENT.register((dispatcher, dedicated) -> {
+			UniqueoriginsCommand.register(dispatcher);
+		});
 	}
 
 	public static UniquifierProperties getOriginData(MinecraftServer server) {
@@ -48,28 +57,49 @@ public class Uniqueorigins implements ModInitializer {
 
 	public interface UniquifierProperties {
 		/**
-		 * @return the lowest count of any origin.
+		 * Tests whether the filter is active for a layer
+		 * @param layer the given layer
+		 * @param feedback a reference to the chat feedback function
+		 * @param error a reference to the chat error feedback function
+		 * @return whether the filter is on (1) or off (0)
 		 */
-		int getMinOriginCount();
+		int getFilter(Identifier layer, BiConsumer<Text, Boolean> feedback, Consumer<Text> error);
 		/**
-		 * @return the highest count of any origin.
+		 * Activates/deactivates the filter for a layer
+		 * @param layer the given layer
+		 * @param value whether that layer should now be active
+		 * @param feedback a reference to the chat feedback function
+		 * @param error a reference to the chat error feedback function
+		 * @return the input value
 		 */
-		int getMaxOriginCount();
+		int setFilter(Identifier layer, boolean value, BiConsumer<Text, Boolean> feedback, Consumer<Text> error);
 		/**
-		 * Retrieves the count of a given origin.
-		 * @param identifier the given origin
-		 * @return the number of players with that origin
+		 * Toggles the filter for a layer
+		 * @param layer the given layer
+		 * @param feedback a reference to the chat feedback function
+		 * @param error a reference to the chat error feedback function
+		 * @return the input value
 		 */
-		int getOriginCount(Identifier identifier);
+		int toggleFilter(Identifier layer, BiConsumer<Text, Boolean> feedback, Consumer<Text> error);
+		/**
+		 * Filters out saturated origins from a list
+		 * @param layer the given layer
+		 * @param conditionedOrigins the list of conditioned origins to filter
+		 * @param layerOrigins the list of origins on the layer
+		 * @return the filtered list of origins with saturated origins removed
+		 */
+		List<Identifier> filter(Identifier layer, List<Identifier> conditionedOrigins, List<Identifier> layerOrigins);
 		/**
 		 * Increments the count for the specified origin
+		 * @param layer the layer to increment the count for
 		 * @param origin the origin to increment the count for
 		 */
-		void addOriginCount(Identifier origin);
+		void incrementOriginCount(Identifier layer, Identifier origin);
 		/**
 		 * Decrement the count for the specified origin
+		 * @param layer the layer to decrement the count for
 		 * @param origin the origin to decrement the count for
 		 */
-		void removeOriginCount(Identifier origin);
+		void decrementOriginCount(Identifier layer, Identifier origin);
 	}
 }
