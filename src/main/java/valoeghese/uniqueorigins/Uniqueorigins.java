@@ -20,7 +20,12 @@
 package valoeghese.uniqueorigins;
 
 import net.fabricmc.fabric.api.command.v1.CommandRegistrationCallback;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.text.Text;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -48,11 +53,11 @@ public class Uniqueorigins implements ModInitializer {
 	}
 
 	public static UniquifierProperties getOriginData(MinecraftServer server) {
-		return server.getWorld(World.OVERWORLD).getPersistentStateManager().getOrCreate(UniqueState::new, ID);
+		return server.getLevel(Level.OVERWORLD).getDataStorage().get(UniqueState::new, ID);
 	}
 
 	public interface HackedOriginLayer {
-		void writeFirstLogin(PlayerEntity entity, PacketByteBuf buffer);
+		void writeFirstLogin(Player entity, FriendlyByteBuf buffer);
 	}
 
 	public interface UniquifierProperties {
@@ -63,7 +68,7 @@ public class Uniqueorigins implements ModInitializer {
 		 * @param error a reference to the chat error feedback function
 		 * @return whether the filter is on (1) or off (0)
 		 */
-		int getFilter(Identifier layer, BiConsumer<Text, Boolean> feedback, Consumer<Text> error);
+		int getFilter(ResourceLocation layer, BiConsumer<Component, Boolean> feedback, Consumer<Component> error);
 		/**
 		 * Activates/deactivates the filter for a layer
 		 * @param layer the given layer
@@ -72,7 +77,7 @@ public class Uniqueorigins implements ModInitializer {
 		 * @param error a reference to the chat error feedback function
 		 * @return the input value
 		 */
-		int setFilter(Identifier layer, boolean value, BiConsumer<Text, Boolean> feedback, Consumer<Text> error);
+		int setFilter(ResourceLocation layer, boolean value, BiConsumer<Component, Boolean> feedback, Consumer<Component> error);
 		/**
 		 * Toggles the filter for a layer
 		 * @param layer the given layer
@@ -80,7 +85,7 @@ public class Uniqueorigins implements ModInitializer {
 		 * @param error a reference to the chat error feedback function
 		 * @return the input value
 		 */
-		int toggleFilter(Identifier layer, BiConsumer<Text, Boolean> feedback, Consumer<Text> error);
+		int toggleFilter(ResourceLocation layer, BiConsumer<Component, Boolean> feedback, Consumer<Component> error);
 		/**
 		 * Filters out saturated origins from a list
 		 * @param layer the given layer
@@ -88,18 +93,18 @@ public class Uniqueorigins implements ModInitializer {
 		 * @param layerOrigins the list of origins on the layer
 		 * @return the filtered list of origins with saturated origins removed
 		 */
-		List<Identifier> filter(Identifier layer, List<Identifier> conditionedOrigins, List<Identifier> layerOrigins);
+		List<ResourceLocation> filter(ResourceLocation layer, List<ResourceLocation> conditionedOrigins, List<ResourceLocation> layerOrigins);
 		/**
 		 * Increments the count for the specified origin
 		 * @param layer the layer to increment the count for
 		 * @param origin the origin to increment the count for
 		 */
-		void incrementOriginCount(Identifier layer, Identifier origin);
+		void incrementOriginCount(ResourceLocation layer, ResourceLocation origin);
 		/**
 		 * Decrement the count for the specified origin
 		 * @param layer the layer to decrement the count for
 		 * @param origin the origin to decrement the count for
 		 */
-		void decrementOriginCount(Identifier layer, Identifier origin);
+		void decrementOriginCount(ResourceLocation layer, ResourceLocation origin);
 	}
 }

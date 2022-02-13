@@ -19,16 +19,15 @@
 
 package valoeghese.uniqueorigins.mixin;
 
+import io.github.apace100.origins.component.PlayerOriginComponent;
+import io.github.apace100.origins.origin.Origin;
+import io.github.apace100.origins.origin.OriginLayer;
+import net.minecraft.world.entity.player.Player;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-
-import io.github.apace100.origins.component.PlayerOriginComponent;
-import io.github.apace100.origins.origin.Origin;
-import io.github.apace100.origins.origin.OriginLayer;
-import net.minecraft.entity.player.PlayerEntity;
 import valoeghese.uniqueorigins.Uniqueorigins;
 import valoeghese.uniqueorigins.Uniqueorigins.UniquifierProperties;
 
@@ -38,11 +37,11 @@ public abstract class MixinPlayerOriginComponent {
 	public abstract Origin getOrigin(OriginLayer layer);
 
 	@Shadow
-	private PlayerEntity player;
+	private Player player;
 
 	@Inject(at = @At("HEAD"), method = "setOrigin")
 	private void updateOriginState(OriginLayer layer, Origin origin, CallbackInfo info) {
-		if (!this.player.getEntityWorld().isClient()) {
+		if (!this.player.level.isClientSide()) {
 			Origin oldOrigin = getOrigin(layer); // duplicated code to check if origin actually changed
 
 			if(oldOrigin != origin) {

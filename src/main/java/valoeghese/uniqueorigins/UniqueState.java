@@ -19,6 +19,13 @@
 
 package valoeghese.uniqueorigins;
 
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.TranslatableComponent;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.level.saveddata.SavedData;
+import valoeghese.uniqueorigins.Uniqueorigins.UniquifierProperties;
+
 import java.util.List;
 import java.util.OptionalInt;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -26,68 +33,60 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.text.Text;
-import net.minecraft.text.TranslatableText;
-import net.minecraft.util.Identifier;
-import net.minecraft.world.PersistentState;
-import valoeghese.uniqueorigins.Uniqueorigins.UniquifierProperties;
-
-public class UniqueState extends PersistentState implements UniquifierProperties {
-	public UniqueState() {
-		super("uniqueorigindata");
+public class UniqueState extends SavedData implements UniquifierProperties {
+	public UniqueState(CompoundTag tag) {
+		this.from(tag);
 	}
 
 	private CompoundTag impl = new CompoundTag();
 
-	@Override
-	public void fromTag(CompoundTag tag) {
+	public void from(CompoundTag tag) {
 		this.impl = tag;
 	}
 
 	@Override
-	public CompoundTag toTag(CompoundTag tag) {
+	public CompoundTag save(CompoundTag tag) {
 		return this.impl;
 	}
 
 	@Override
-	public int getFilter(Identifier layer, BiConsumer<Text, Boolean> feedback, Consumer<Text> error){
+	public int getFilter(ResourceLocation layer, BiConsumer<Component, Boolean> feedback, Consumer<Component> error){
 		AtomicBoolean layerTagPresent = new AtomicBoolean(true);
 		boolean filtered = isFiltered(layer, () -> layerTagPresent.set(false)); // this sounds overkill
 		if (!layerTagPresent.get())
-			error.accept(new TranslatableText("The layer %s is not registered", layer));
+			error.accept(new TranslatableComponent("The layer %s is not registered", layer));
 		else
-			feedback.accept(new TranslatableText(
+			feedback.accept(new TranslatableComponent(
 			"Layer %s is" + (filtered ? " " : " not ") + "filtered",
 			layer), false);
 		return filtered ? 1 : 0;
 	}
 
 	@Override
-	public int setFilter(Identifier layer, boolean value, BiConsumer<Text, Boolean> feedback, Consumer<Text> error){
+	public int setFilter(ResourceLocation layer, boolean value, BiConsumer<Component, Boolean> feedback, Consumer<Component> error){
 		CompoundTag layerTag = getLayerTag(layer);
 		if (layerTag == null)
-			error.accept(new TranslatableText("The layer %s is not registered", layer));
+			error.accept(new TranslatableComponent("The layer %s is not registered", layer));
 		else {
-			feedback.accept(new TranslatableText(
+			feedback.accept(new TranslatableComponent(
 				"The filtering of layer %s was changed from %s to %s",
 				layer, !layerTag.contains("Filtered") || layerTag.getBoolean("Filtered"), value), false);
 			layerTag.putBoolean("Filtered", value);
-			this.markDirty();
+			this.setDirty();
 		}
 		return value ? 1 : 0;
 	}
 
 	@Override
-	public int toggleFilter(Identifier layer, BiConsumer<Text, Boolean> feedback, Consumer<Text> error){
+	public int toggleFilter(ResourceLocation layer, BiConsumer<Component, Boolean> feedback, Consumer<Component> error){
 		return setFilter(layer, !isFiltered(layer), feedback, error);
 	}
 
-	private boolean isFiltered(Identifier layer){
+	private boolean isFiltered(ResourceLocation layer){
 		return isFiltered(layer, null);
 	}
 
-	private boolean isFiltered(Identifier layer, Runnable onNoTag){
+	private boolean isFiltered(ResourceLocation layer, Runnable onNoTag){
 		CompoundTag layerTag = getLayerTag(layer);
 		if (layerTag == null && onNoTag != null)
 			onNoTag.run();
@@ -96,14 +95,14 @@ public class UniqueState extends PersistentState implements UniquifierProperties
 				|| layerTag.getBoolean("Filtered"));
 	}
 
-	public List<Identifier> filter(Identifier layer, List<Identifier> conditionedOrigins, List<Identifier> layerOrigins){
+	public List<ResourceLocation> filter(ResourceLocation layer, List<ResourceLocation> conditionedOrigins, List<ResourceLocation> layerOrigins){
 		if (!isFiltered(layer))
 			return conditionedOrigins;
 		OptionalInt min = layerOrigins.stream().mapToInt(origin -> getOriginCount(layer, origin)).min();
 		return conditionedOrigins.stream().filter(origin -> getOriginCount(layer, origin) <= min.orElse(0)).collect(Collectors.toList());
 	}
 
-	private CompoundTag getLayerTag(Identifier layer){
+	private CompoundTag getLayerTag(ResourceLocation layer){
 		return getLayerTag(layer.toString());
 	}
 
@@ -117,7 +116,7 @@ public class UniqueState extends PersistentState implements UniquifierProperties
 
 	private String getLayerKey(String layer){ return "Layer:" + layer; } // IDs can't have capital letters so we're safe
 
-	private int getOriginCount(Identifier layer, Identifier origin) {
+	private int getOriginCount(ResourceLocation layer, ResourceLocation origin) {
 		return getOriginCount(layer.toString(), origin.toString());
 	}
 
@@ -133,20 +132,20 @@ public class UniqueState extends PersistentState implements UniquifierProperties
 	}
 
 	@Override
-	public void incrementOriginCount(Identifier layer, Identifier origin) {
+	public void incrementOriginCount(ResourceLocation layer, ResourceLocation origin) {
 		if (!origin.toString().equals("origins:empty"))
 			Uniqueorigins.LOGGER.info("Adding 1 to the unique origin count of " + origin + " on layer " + layer);
 		updateOriginCount(layer, origin, 1);
 	}
 
 	@Override
-	public void decrementOriginCount(Identifier layer, Identifier origin) {
+	public void decrementOriginCount(ResourceLocation layer, ResourceLocation origin) {
 		if (!origin.toString().equals("origins:empty"))
 			Uniqueorigins.LOGGER.info("Removing 1 from the unique origin count of " + origin + " on layer " + layer);
 		updateOriginCount(layer, origin, -1);
 	}
 
-	private void updateOriginCount(Identifier layer, Identifier origin, int increment) {
+	private void updateOriginCount(ResourceLocation layer, ResourceLocation origin, int increment) {
 		if (!origin.toString().equals("origins:empty")) {
 			String o = origin.toString(); // get the string representation for the c.t. nbt
 			String l = layer.toString(); // same thing for layer whatever you get the idea
@@ -163,7 +162,7 @@ public class UniqueState extends PersistentState implements UniquifierProperties
 					lt.putInt(o, count + increment);
 			}
 		}
-		this.markDirty();
+		this.setDirty();
 	}
 
 	@Override
